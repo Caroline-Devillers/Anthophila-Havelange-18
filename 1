@@ -1,0 +1,112 @@
+#Chemin du working directory 
+setwd("~/R/outils") 
+
+#install.packages
+install.packages("BiodiversityR")
+#Chargement des packages
+library(vegan)
+library(BiodiversityR)
+
+
+#Importation de la base de donnees 
+bee_1<-read.csv2("BeeCommFF.csv")
+bee_1$Parcelle <- replace(bee_1$Parcelle,c(1:3), "Grande Culture")
+bee_1$Parcelle <- replace(bee_1$Parcelle,c(4:6), "Pâture")
+bee_1$Parcelle <- replace(bee_1$Parcelle,c(10:12), "Zone Humide")
+head(bee_1) #montre les premiere lignes du dataframe
+str(bee_1) #montre la structure de votre jeu de donnees se referer au tuto pour les differentes  explicationsdes jeux de donnees
+
+#Fonctions a utiliser
+#Transformation du bee_1; Somme des observations specifiques selon les traitements floraux
+
+#bee_2<-aggregate(bee_1[,3:ncol(bee_1)],by=list(Habitats=bee_1$Habitats), FUN=sum)
+bee_GC <- bee_1[1:3,-c(1,2)]
+bee_P <- bee_1[4:6,-c(1,2)]
+bee_V <- bee_1[7:9,-c(1,2)]
+bee_ZH <- bee_1[10:12,-c(1,2)]
+
+Comm_Bee = bee_1[,-c(1,2)] #prendre uniquement partie avec especes
+
+#Passage a une matrice de presence absence -> matrice binaire
+Comm_Bee_bin = Comm_Bee
+Comm_Bee_bin[Comm_Bee_bin>0] = 1
+Comm_Bee_bin
+
+#Vecteur Nom de Habitats
+Habitats<-bee_1[,1]
+Habitats
+
+##Nombre d'especes par Habitats 
+RS =rowSums(Comm_Bee_bin)
+RS
+
+#representation graphique
+windows()
+boxplot(RS~Habitats,main="Richesse specifique en fonction des habitats", ylab="Richesse specifique") #ajout titre, axe
+summary(RS~Habitats)
+
+##Abondance par Habitats
+#Nombre total de specimen
+rowSums(Comm_Bee) #somme  ligne
+Abond = rowSums(Comm_Bee)
+Abond
+
+#Graphique boite a moustache
+boxplot(Abond~Habitats,main="Abondance specifique en fontion des habitats", ylab="Abondance") #ajout titre, axe
+summary(Abond~Habitats)
+
+#Pour la richesse specifique
+res.aov.RS<-aov(RS~Habitats)### remplacer traitement par Habitats
+summary(res.aov.RS)
+
+#Pour l'abondance specifique
+res.aov.abd<-aov(Abond~Habitats)
+summary(res.aov.abd)
+
+#rangs d'abondance pour chaque espece sur l'ensemble du site
+#Attention, code a repeter
+rank_G = rankabundance(Comm_Bee)
+rank_G[,1:2]
+rankabunplot(rank_G, scale='abundance', addit=FALSE, specnames=c(1,2,3), main = "Rang d'abondance pour l'ensemble de la zone d'etude")
+windows()
+rank_GC = rankabundance(bee_GC)
+rank_GC
+rankabunplot(rank_GC, scale='abondance', addit=FALSE, specnames=c(1,2,3), main = "Rang d'abondance dans les grandes cultures")
+
+rank_P = rankabundance(bee_P)
+rank_P
+rankabunplot(rank_P, scale='abundance', addit=FALSE, specnames=c(1,2,3), main = "Rang d'abondance dans les prairies")
+
+rank_V = rankabundance(bee_V)
+rank_V
+rankabunplot(rank_V, scale='abundance', addit=FALSE, specnames=c(1,2,3), main = "Rang d'abondance dans les vergers")
+
+rank_ZH = rankabundance(bee_ZH)
+rank_ZH
+rankabunplot(rank_ZH, scale='abundance', addit=FALSE, specnames=c(1,2,3), main = "Rang d'abondance dans les zones humides")
+
+###Attention il faut repartir sur NomDataframe afin d'avoir cette variabilite
+
+##Indice de Simpson par habitat
+
+Simpson = diversity(bee_1[,-c(1,2)], index="simpson")
+Simpson
+
+#definir les types habitats
+boxplot(Simpson~Habitats,main="Indice de Simpson en fonction des habitats", ylab="Indice de Simpson")#ajout titre, axe
+
+##Indice de Shannon par type de habitat
+
+Shannon = diversity(bee_1[,-c(1,2)], index="shannon")
+Shannon
+
+boxplot(Shannon~Habitats,main="Indice de Shannon en fonction des habitats", ylab="Indice de Shannon")#ajout titre, axe
+
+
+#Pour la richesse specifique
+res.aov<-aov(Simpson~Habitats)
+summary(res.aov)
+
+#Pour l'abondance specifique
+res.aov<-aov(Shannon~Habitats)
+summary(res.aov)
